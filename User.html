@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+   <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="./NavCatFoot.css">
+    <link rel="stylesheet" href="./card.css">
+    <!-- Jquery -->
+    <script src="https://code.jquery.com/jquery-4.0.0.js" integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
+     <style>
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #d4cbc3;
+  font-family: "Georgia", serif;
+}
+
+/* PAGE TITLE */
+h2 {
+    text-align: center;
+    margin-top: 20px;
+    color: #1b2a2c;
+}
+
+/* MAIN CONTAINER */
+.container {
+    /* margin: 50px auto ; */
+    margin: 50px 200px 80px 430px;
+    padding: 35px;
+    width: 600px;
+    
+    background-color: #fdf8f2;
+    display: flex;
+    gap: 30px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+}
+
+/* FORM SECTION */
+.user {
+    /* display: flex; */
+    margin-left: 20px;
+    flex-direction: column;
+    gap: 20x;
+    align-items: start;
+}
+
+/* EACH ROW */
+.field {
+    display: grid;
+    grid-template-columns: 160px 300px; /* reduced input width */
+    align-items: center;
+    column-gap: 20px;
+    padding: 8px;
+    border: 2px solid #666565;
+    border-radius: 6px;
+    background-color: #a19d98;
+    /* justify-content: space-evenly; */
+}
+
+/* LABEL */
+.field label {
+    text-align: left;
+    font-weight: bold;
+    color: #1f2d2f;
+    padding: 8px;
+    background-color: #a19d98;
+    border-radius: 4px;
+}
+
+/* INPUTS */
+.field input,
+.field select,
+.field textarea {
+    padding: 8px;
+    border: 2px solid #666565;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    background-color: #f0f7f6;
+    width: 100%;
+}
+
+/* FOCUS EFFECT */
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    border-color: #2f5f66;
+    box-shadow: 0 0 5px rgba(47, 95, 102, 0.5);
+}
+</style>
+
+</head>
+<body>
+ <div class="navbar"></div>
+    <div class="main">
+            <h2>User Details</h2>
+            <div class="container">
+                <div class="user">
+                    <div class="field">
+                        <label>User ID:</label>
+                        <select id="ddlUserID"></select>
+                    </div>
+
+                    <div class="field">
+                        <label>User Name:</label>
+                        <label id="lblName">
+                    </div>
+
+                    <div class="field">
+                        <label>User Type:</label>
+                        <label id="lblType"></label>
+                    </div>
+
+                    <div class="field">
+                        <label>User Email:</label>
+                        <label id="lblEmail" required></label>
+                    </div>
+
+                    
+                
+                </div>
+            </div>
+        </div>
+     <div class="footer"></div>
+</body>
+<script src="./JS/NavFoot.js"></script>
+
+<script>
+        const catApi="http://localhost:50312/api/Category";
+        const typeApi="http://localhost:50312/api/Type";
+
+
+        $(document).ready(function(){
+            loadUserID();
+            
+        })
+      
+function loadUserID(){
+            $.ajax({
+                url:userApi,
+                type:"GET",
+                success:(users)=>{
+                    let option="";
+                    users.forEach(element => {
+                        option+=`<option value="${element.UserID}">${element.UserID}</option>`;
+                    });
+                    $("#ddlUserID").html(option);
+                    if(users.length>0){
+                       
+                        fillData(users[0]);
+                        
+                    }
+                },
+                error:(err)=>{
+                    alert(err);
+                }
+            });
+        }
+        
+    function fillData(user){
+      
+        $("#lblName").html(`<p>${user.Name}</p>`);
+        $("#lblEmail").html(`<p>${user.Email}</p>`);
+        getUserType(user.TypeID);
+
+
+    }
+
+    function getUserType(id){
+        $.ajax({
+            url:typeApi,
+            type:"GET",
+            success:(types)=>{
+                let type=types.find(item=>item.TypeID==id);
+                if(type){
+                    $("#lblType").html(`<p>${type.TypeName}`);
+                }
+            }
+        })
+    }
+     $("#ddlUserID").change(() => {
+        let id = $("#ddlUserID").val();
+        $.ajax({
+            url: userApi,
+            type: "GET",
+            success: (users) => {
+                let user = users.find(e => e.UserID == id);
+                if(user){
+                    fillData(user);
+                    disableForm();
+                }
+            },
+            error: () => {
+                alert("Error fetching Users");
+            }
+        });
+    });
+</script>
+<script src="./JS/Watch.js"></script>
+<script src="./JS/func.js"></script>
+</html>

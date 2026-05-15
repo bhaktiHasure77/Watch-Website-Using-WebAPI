@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <!-- Jquery -->
+    <script src="https://code.jquery.com/jquery-4.0.0.js" integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
+    
+    <link rel="stylesheet" href="./NavCatFoot.css">
+     <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Georgia", serif;
+}
+
+body {
+    background-color: #d4cbc3;
+}
+
+/* MAIN WRAPPER */
+.main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 20px;
+}
+
+/* CONTAINER (CARD STYLE) */
+.container {
+    width: 100%;
+    max-width: 750px;
+    background-color: #aea196;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* TITLE */
+.container h2 {
+    margin-bottom: 20px;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+/* HEADERS */
+th {
+    background-color: #96887c;
+    padding: 12px;
+    text-align: center;
+}
+
+/* CELLS */
+td {
+     /* text-align: left; */
+    padding: 15px;
+    text-align: center;
+}
+
+/* ROW SPACING */
+.container tr {
+     background-color: #96887c;
+    border-bottom: 1px solid #ddd;
+}
+
+/* TOTAL ROW */
+tfoot td {
+    
+    font-weight: bold;
+    padding: 15px;
+}
+
+/* REMOVE OLD SPACING */
+#bill-table {
+    border-spacing: 0;
+}
+h2{
+  text-align: center;
+}
+
+ </style> 
+   </head>
+<body>
+    <nav class="navbar"></nav>
+    <div class="main">
+     <div class="container">
+     <h2>Order Details</h2>
+      <!-- <label for="ddlOrderID">Select Bill ID:</label> -->
+      <!-- <select id="ddlOrderID"></select> -->
+
+      <table id="bill-table">
+        <tbody id="bill-body">
+          <tr><th>Bill ID</th>
+            <!-- <td id="bill-id" colspan="3"></td> -->
+              <td colspan="4"><select id="ddlOrderID"></select></td>
+          </tr>
+          <tr><th>User Name</th><td id="user-name" colspan="3"></td></tr>
+          <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Qty</th>
+            <th>Subtotal</th>
+          </tr>
+          <!-- Product rows injected here -->
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="1">Total Amount:</td>
+            <td id="total-amount" colspan="3" style="text-align:right;">₹0.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    
+  </div>
+    </div>
+         <div class="footer"></div>
+
+  </body>
+<script>
+
+// API endpoints
+const billApi = "http://localhost:50312/api/Bill";
+const billDetailsApi = "http://localhost:50312/api/BillDetails";
+// const prodApi = "http://localhost:50312/api/Product";
+
+$(document).ready(function () {
+  loadBillID();
+
+  
+});
+$("#ddlOrderID").change(function () {
+    let billID = $(this).val();
+  
+    loadBillDetails(billID);
+  });
+//  Load Bills into dropdown
+function loadBillID() {
+  $.ajax({
+    url: billApi,
+    type: "GET",
+    success: function (bills) {
+
+      let options = "";
+
+      bills.forEach(b => {
+        options += `<option value="${b.BillID}">${b.BillID}</option>`;
+      });
+
+      $("#ddlOrderID").html(options);
+      //  console.log(bills);
+       
+      if (bills.length > 0) {
+    
+        bills.forEach(ele=>{
+          // console.log();
+          
+$("#user-name").text(ele.UserName);
+          loadBillDetails(ele.BillID);
+        })
+        
+      }
+    },
+    error: function () {
+      alert("Error loading bills");
+    }
+  });
+}
+
+
+//  Load bill details + products
+function loadBillDetails(billID) {
+
+  $.ajax({
+    url: billDetailsApi,
+    type: "GET",
+    success: function (details) {
+
+      $.ajax({
+        url: prodApi,
+        type: "GET",
+        success: function (products) {
+          // console.log(products);
+
+          let rowsHtml = "";
+          let total = 0;
+
+          // Clear old rows
+          $(".product-row").remove();
+
+          // Filter by bill ID
+          let filtered = details.filter(d => d.BillID == parseInt(billID));
+          // console.log(filtered);
+          // If no products
+          if (filtered.length === 0) {
+            $("#bill-body").append(`
+              <tr class="product-row">
+                <td colspan="4">No products found</td>
+              </tr>
+            `);
+            $("#total-amount").text("₹0.00");
+            return;
+          }
+
+          // Loop through multiple items
+          filtered.forEach(item => {
+            $("#user-name").text(item.Name);
+            let product = products.find(p => p.ProdID == item.ProdID);
+            let name = product ? product.Name : "Unknown";
+
+            let subtotal =item.Amt; // change if Amt is already total
+            total += subtotal;
+
+            rowsHtml += `
+              <tr class="product-row">
+                <td>${name}</td>
+                <td>₹${product.Price}</td>
+                <td>${item.Qty}</td>
+                <td>₹${subtotal}</td>
+              </tr>
+            `;
+          });
+
+          $("#bill-body").append(rowsHtml);
+
+          $("#total-amount").text(
+            total.toLocaleString("en-IN", {
+              style: "currency",
+              currency: "INR"
+            })
+          );
+
+        },
+        error: function () {
+          alert("Error loading products");
+        }
+      });
+
+    },
+    error: function () {
+      alert("Error loading bill details");
+    }
+  });
+}
+
+</script>
+<script src="./JS/NavFoot.js"></script>
+<script src="./JS/Watch.js"></script>
+<script src="./JS/func.js"></script>
+<script src="./JS/Cart.js"></script>
+</html>
